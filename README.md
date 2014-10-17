@@ -1,6 +1,6 @@
 
 
-Easy Slide Show 4 Android
+Easy Slide Show 4 Android<br>
 Still in <b>progress</b>
 
 A small library ( it is actually one file ) that you can basically copy and paste it in your project.
@@ -10,7 +10,7 @@ It uses dots to indicate which image you are using.
 
 
 Better explained with a ScreenShot
-
+<a href="http://tinypic.com?ref=15zfm8j" target="_blank"><img src="http://i61.tinypic.com/15zfm8j.png" border="0" alt="Image and video hosting by TinyPic"></a>
 
 
 How-to
