@@ -37,7 +37,7 @@ How-to
 ```
 
 
-To-Do
+To-Do <br>
 1) Add examples <br>
 2) Add a generic way to make animation between imageview trasnistion and remove the current one which depeneds on canvas <br>
 3) Give a public function for changing the MAX_IMAGES which is now 3 ( it can be changed by code if you like ) <br>
