@@ -14,8 +14,9 @@ Better explained with a ScreenShot
 
 
 How-to
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!First of all you need picasso in your project!!!!-> you can get picasso here< href="https://github.com/square/picasso">picasso</a>
+
+First of all you need picasso in your project 
+   -> you can get picasso here<a href="https://github.com/square/picasso">picasso</a>
 Then :
 
 1) Add it in your layout 
