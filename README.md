@@ -19,15 +19,20 @@ First of all you need picasso in your project <br>
    -> you can get picasso here <a href="https://github.com/square/picasso">picasso</a><br>
 Then :<br>
 
+##Changes
+
+
 1) Add it in your layout 
 ```java
     <gr.spiritinlife.EasySlideShow.SlideShowView
-        android:id="@+id/slideShow"
-        android:layout_width="match_parent"
-        android:clickable="true"
-        android:layout_height="170dp"
-        android:layout_marginBottom="7dp"
-        android:minHeight="200dp"/>
+             android:id="@+id/slideShow"
+             android:layout_width="match_parent"
+             android:layout_height="170dp"
+             android:scaleType="centerCrop"
+             slideshow:dotNormal="#626283"
+             slideshow:dotSelected="#62aa83"
+             slideshow:dotRadius="5dp"
+             slideshow:dotMargin="2dp"/>
 ```
         
 2) Get it from code
@@ -41,8 +46,62 @@ Then :<br>
 ```
 
 
-To-Do <br>
-1) Add examples <br>
-2) Add a generic way to make animation between imageview trasnistion and remove the current one which depeneds on canvas <br>
-3) Give a public function for changing the MAX_IMAGES which is now 3 ( it can be changed by code if you like ) <br>
-4) Make it possible to add custom colors on dots without changing the library. <br>
+Example activity
+
+```
+
+public class EasySlideShowActivity extends Activity {
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.easyslideshow_activity);
+
+    SlideShowView slideShow  = (SlideShowView) findViewById(R.id.slideShow);
+    slideShow.start(new String[] {
+        "http://7-themes.com/data_images/out/42/6914793-tropical-beach-images.jpg",
+        "http://p1.pichost.me/i/51/1749517.jpg",
+        "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcR4AxN9QLjASziCAjb0Imt5uoWhJrNBytYzM4JyQ8JLiHG4fl2W",
+        "https://pbs.twimg.com/profile_images/587778453937618944/-z_faB4f.jpg",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9Oonh8RodI9wTlONYORc7AbYoDRLkxnov5gsPamFPhvq2pAhd"
+    });
+  }
+}
+
+
+```
+
+
+And the Example layout
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:slideshow="http://schemas.android.com/apk/res-auto"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+
+    <gr.spiritinlife.EasySlideShow.SlideShowView
+            android:id="@+id/slideShow"
+            android:layout_width="match_parent"
+            android:layout_height="170dp"
+            android:scaleType="centerCrop"
+            slideshow:dotNormal="#626283"
+            slideshow:dotSelected="#62aa83"
+            slideshow:dotRadius="5dp"
+            slideshow:dotMargin="2dp"
+            android:layout_centerInParent="true"/>
+
+
+</RelativeLayout>
+
+```
+
+
+## Changes
+
+- Remove relativelayout and use just a single imageview
+- Various optimization
+- Make it more configurable

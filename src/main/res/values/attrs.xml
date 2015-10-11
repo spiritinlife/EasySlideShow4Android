@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SlideShow">
+        <attr name="dotSelected" format="color"/>
+        <attr name="dotNormal" format="color"/>
+        <attr name="dotRadius" format="dimension"/>
+        <attr name="dotMargin" format="dimension"/>
+    </declare-styleable>
+</resources>

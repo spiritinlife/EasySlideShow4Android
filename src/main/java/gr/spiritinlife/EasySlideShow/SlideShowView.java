@@ -1,260 +1,241 @@
 package gr.spiritinlife.EasySlideShow;
 
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
+
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
+import android.os.Build;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
+import gr.spiritinlife.EasySlideShow.R;
 
-import com.squareup.picasso.Callback;
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
-
-/**
- * Created by spiritinlife on 17/10/2014.
- */
-public class SlideShowView extends RelativeLayout implements TargetLoaded {
+public class SlideShowView extends ImageView implements TargetLoaded {
 
 
-    private static final int MAX_IMAGES = 3;
-    private Context context;
+  private String[] urls;
 
-    private String[] urls;
+  private int curPos = 0;
 
+  private int imagesSize = 0;
 
-    //CANVAS
-    private static final int radius = 10;
-    private static final int selectorsMargin = 5;
-    private int CanvasWidth;
-    private int CanvasHeight;
-    private Paint grayPaint,whitePaint,blackPaint;
+  private GestureDetector gdt;
 
+  private TargetImageView nextImageView;
 
+  private Dot[] dots;
 
+  //CANVAS
+  private int radius = 10;
 
+  private int dotMargin = 5;
 
-    private int curPos = 0;
-    private ImageView curImageView;
-    private TargetImageView nextImageView;
+  private int dotYPos = -1;
 
 
-    private boolean Waiting = true;
-    private int counter = 0;
+  private Paint selectedPaint;
 
-    public SlideShowView(Context context,String[] urls) {
-        this(context, null, 0);
+  private Paint normalPaint;
+
+
+  public SlideShowView(Context context) {
+    super(context);
+    init(context, null);
+  }
+
+
+  public SlideShowView(Context context, AttributeSet attrs) {
+    super(context, attrs);
+    init(context, attrs);
+  }
+
+  public SlideShowView(Context context, AttributeSet attrs, int defStyleAttr) {
+    super(context, attrs, defStyleAttr);
+    init(context, attrs);
+  }
+
+  @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+  public SlideShowView(Context context, AttributeSet attrs, int defStyleAttr,
+      int defStyleRes) {
+    super(context, attrs, defStyleAttr, defStyleRes);
+    init(context, attrs);
+  }
+
+
+  private void init(Context context, AttributeSet attrs) {
+    gdt = new GestureDetector(context, new GestureListener());
+    nextImageView = new TargetImageView(this);
+    setClickable(true);
+
+    this.normalPaint = new Paint();
+    this.selectedPaint = new Paint();
+    this.normalPaint.setStyle(Paint.Style.FILL);
+    this.selectedPaint.setStyle(Paint.Style.FILL);
+
+    int dotNormalColor = Color.WHITE;
+    int dotSelectedColor = Color.GRAY;
+
+    TypedArray a = context.getTheme().obtainStyledAttributes(
+        attrs,
+        R.styleable.SlideShow,
+        0, 0);
+
+    try {
+      dotNormalColor = a.getColor(R.styleable.SlideShow_dotNormal, Color.WHITE);
+      dotSelectedColor = a.getColor(R.styleable.SlideShow_dotSelected, Color.GRAY);
+      radius = a.getDimensionPixelSize(R.styleable.SlideShow_dotRadius, 10);
+      dotMargin = a.getDimensionPixelSize(R.styleable.SlideShow_dotMargin, 5);
+    } finally {
+      a.recycle();
     }
 
-    public SlideShowView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
+    this.selectedPaint.setColor(dotSelectedColor);
+    this.normalPaint.setColor(dotNormalColor);
+
+    this.setOnTouchListener(new OnTouchListener() {
+      @Override
+      public boolean onTouch(View v, MotionEvent event) {
+        return gdt.onTouchEvent(event);
+      }
+    });
+  }
+
+  public void start(String[] urls) {
+    this.urls = urls;
+    this.imagesSize = this.urls.length;
+
+    // setup dots
+    dots = new Dot[imagesSize];
+    int dotY = 2 * radius - dotMargin;
+    int dotWidth = 2 * radius + dotMargin;
+    for (int i = 0; i < dots.length; i++) {
+      dots[i] = new Dot((imagesSize / 2 - i) * dotWidth, dotY, radius);
     }
 
-    public SlideShowView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-        setWillNotDraw(false);
-        nextImageView = new TargetImageView(this);
-        this.context = context;
-        this.grayPaint = new Paint();
-        this.grayPaint.setColor(Color.GRAY);
-        this.grayPaint.setStyle(Paint.Style.FILL);
-        this.whitePaint = new Paint();
-        this.whitePaint.setColor(Color.WHITE);
-        this.whitePaint.setStyle(Paint.Style.FILL);
-
-        //we need to set that, because it will be edgy and ugly otherwise
-        this.grayPaint.setAntiAlias(true);
-        this.whitePaint.setAntiAlias(true);
+    getImageIntoView(0);
+  }
 
 
-        this.blackPaint = new Paint();
-        this.blackPaint.setColor(Color.BLACK);
+  private void getImageIntoView(int position) {
+    Picasso.with(getContext()).load(urls[position]).into(nextImageView);
+  }
 
-        this.setOnTouchListener(new OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                return gdt.onTouchEvent(motionEvent);
-            }
-        });
 
+  protected void next() {
+    curPos++;
+    if (curPos > imagesSize - 1) {
+      curPos = 0;
+    }
+    getImageIntoView(curPos);
+  }
+
+
+  protected void prev() {
+    curPos--;
+    if (curPos < 0) {
+      curPos = imagesSize - 1;
+    }
+    getImageIntoView(curPos);
+  }
+
+  @Override
+  public void onTargetLoaded(Bitmap bitmap) {
+    setImageBitmap(bitmap);
+    invalidate();
+  }
+
+  @Override
+  protected void onDraw(Canvas canvas) {
+    super.onDraw(canvas);
+
+    if (dots == null) {
+      return;
     }
 
-
-    private final GestureDetector gdt = new GestureDetector(new GestureListener());
-
-    private class GestureListener extends GestureDetector.SimpleOnGestureListener {
-
-        private final int SWIPE_MIN_DISTANCE = 70;
-        private final int SWIPE_THRESHOLD_VELOCITY = 100;
-
-        @Override
-        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            if(e1.getX() - e2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
-                // Right to left, your code here
-                next();
-                return true;
-            } else if (e2.getX() - e1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) >  SWIPE_THRESHOLD_VELOCITY) {
-                // Left to right, your code here
-                prev();
-                return true;
-            }
-            return false;
-        }
+    int offsetX = canvas.getWidth() / 2;
+    int offsetY = canvas.getHeight();
+    for (int i = 0; i < dots.length; i++) {
+      dots[i].render(canvas, offsetX, offsetY, (curPos == i) ? selectedPaint : normalPaint);
     }
 
+  }
 
-    private void Initialize() {
-     /*   for (int i = 3; i < 0; i++) {
-            getImageIntoView(i); //cache them in picasso
-        }*/
-        getImageIntoView(0);
-    }
+  private class Dot {
 
+    private int posX, posY, radius;
 
-    public void start(String[] urls)
-    {
-        Picasso.with(context).setLoggingEnabled(true);
-        this.urls = urls;
-        this.curImageView = newImageViewInstance();
-        addView(curImageView);
-        Initialize();
-    }
-
-
-
-    /**
-     * Create the ImageView that will be used to show the bitmap.
-     *
-     * @return A new ImageView instance
-     */
-    private ImageView newImageViewInstance() {
-        ImageView iv = new ImageView(context);
-        iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-        // SlideShowView is a subclass of RelativeLayout. Set the layout parameters accordingly
-        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-        lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-        lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-        iv.setLayoutParams(lp);
-
-        return iv;
-    }
-
-    private void getImageIntoView(int position) {
-        Picasso.with(context).load(urls[position]).into(nextImageView);
+    public Dot() {
 
     }
 
-
-
-    protected void next()
-    {
-        Waiting = true;
-        curPos++;
-        if (curPos > MAX_IMAGES-1)
-            curPos = 0;
-        getImageIntoView(curPos);
-        invalidate();
+    public Dot(int posX, int posY, int radius) {
+      this.posX = posX;
+      this.posY = posY;
+      this.radius = radius;
     }
 
-
-    protected void prev()
-    {
-        Waiting = true;
-        curPos--;
-        if (curPos < 0)
-            curPos = MAX_IMAGES-1;
-        getImageIntoView(curPos);
-        invalidate();
+    public void render(Canvas canvas, int offsetX, int offsetY, Paint paint) {
+      canvas
+          .drawCircle(offsetX - posX, offsetY - posY, radius, paint);
     }
+  }
 
+  private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+
+    private final int SWIPE_MIN_DISTANCE = 50;
+
+    private final int SWIPE_THRESHOLD_VELOCITY = 70;
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        this.CanvasWidth = w;
-        this.CanvasHeight = h;
-        super.onSizeChanged(w, h, oldw, oldh);
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+      if (e1.getX() - e2.getX() > SWIPE_MIN_DISTANCE
+          && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+        // Right to left, your code here
+        next();
+        return true;
+      } else if (e2.getX() - e1.getX() > SWIPE_MIN_DISTANCE
+          && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+        // Left to right, your code here
+        prev();
+        return true;
+      }
+      return false;
     }
+  }
 
 
-    /**
-     * We use dispatchDraw in order to draw like childs
-     * or else the dots would be hidden by the imageView
-     * @param canvas
-     */
-    @Override
-    protected void dispatchDraw(Canvas canvas) {
-        //clear canvas
-        canvas.drawColor(Color.WHITE);
-        //super draws the image view
-        super.dispatchDraw(canvas);
-        //and we add the dots
-        int y = CanvasHeight - 2*radius - selectorsMargin;
+  public class TargetImageView implements Target {
 
-        for (int i = MAX_IMAGES-1; i >=0 ; i--) {
-            canvas.drawCircle(CanvasWidth / 2 + 2 * (i - 1) * radius + i * selectorsMargin, y, radius, (curPos == i) ? grayPaint : whitePaint); //i think (i-1) works because we dont want to count the dot in the middle
-        }
+    TargetLoaded targetLoaded;
 
-
-        /**
-         * todo a generic way to add animations not from canvas
-         */
-        if (Waiting)
-        {
-            canvas.drawLine(0, 7*counter, CanvasWidth, 7*counter, blackPaint);
-            canvas.drawLine(0, 6*counter, CanvasWidth, 6*counter, blackPaint);
-            canvas.drawLine(0, 5*counter, CanvasWidth, 5*counter, blackPaint);
-            counter += 2;
-            postInvalidate();
-        }
-        else
-            counter = 0;
+    public TargetImageView(TargetLoaded targetLoaded) {
+      this.targetLoaded = targetLoaded;
     }
 
     @Override
-    public void onTargetLoaded(Bitmap bitmap) {
-        curImageView.setImageBitmap(bitmap);
-        Waiting = false;
-        invalidate();
+    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+      targetLoaded.onTargetLoaded(bitmap);
+    }
+
+    @Override
+    public void onBitmapFailed(Drawable errorDrawable) {
 
     }
 
+    @Override
+    public void onPrepareLoad(Drawable placeHolderDrawable) {
 
-
-    public class TargetImageView implements Target {
-
-        TargetLoaded targetLoaded;
-
-        public TargetImageView(TargetLoaded targetLoaded)
-        {
-            this.targetLoaded = targetLoaded;
-        }
-
-        @Override
-        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            targetLoaded.onTargetLoaded(bitmap);
-        }
-
-        @Override
-        public void onBitmapFailed(Drawable errorDrawable) {
-
-        }
-
-        @Override
-        public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-        }
-    };
+    }
+  }
 
 
 }
-
